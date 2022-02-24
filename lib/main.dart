@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:logger/logger.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,11 +15,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Color Picker',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Color Picker'),
     );
   }
 }
@@ -31,17 +36,34 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final Map<String, Color> colors = {
-    'purple': Colors.purple,
-    'blue': Colors.blue,
-    'yellow': Colors.yellow,
-    'pink': Colors.pink,
-    'teal': Colors.teal,
-    'orange': Colors.orange
+    'Purple': Colors.purple,
+    'Blue': Colors.blue,
+    'Yellow': Colors.yellow,
+    'Pink': Colors.pink,
+    'Teal': Colors.teal,
+    'Orange': Colors.orange
   };
 
-  var selectedColor;
+  Color? selectedColor;
 
-  void _setColor(String colorName, Color color) {
+  @override
+  void initState() {
+    super.initState();
+    _getStoredColor();
+  }
+
+  void _getStoredColor() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? colorName = prefs.getString('color');
+
+    setState(() {
+      selectedColor = colors[colorName];
+    });
+  }
+
+  void _setColor(String colorName, Color color) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('color', colorName);
     setState(() {
       selectedColor = color;
     });
@@ -58,6 +80,12 @@ class _MyHomePageState extends State<MyHomePage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Center(
+            child: Text(
+              'You are on ${kIsWeb ? "the web" : Platform.operatingSystem}',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ),
           for (var entry in colors.entries)
             Container(
               margin: EdgeInsets.all(10),
@@ -66,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   primary: entry.value,
                   minimumSize: Size(300, 60),
                 ),
-                child: Text(''),
+                child: Text(entry.key),
                 onPressed: () => _setColor(entry.key, entry.value),
               ),
             ),
